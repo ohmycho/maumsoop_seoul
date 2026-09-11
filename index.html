@@ -449,8 +449,8 @@ function showToast(msg){
 
 function openStaffModal(){ document.getElementById('staffOverlay').classList.add('show'); }
 function closeStaffModal(){
-  if(!staffName) return; // must pick one first time
   document.getElementById('staffOverlay').classList.remove('show');
+  pendingAfterStaff = null;
 }
 function pickStaff(name){
   staffName = name;
