@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>마음SSUL루션 in 서울 · 체크인</title>
+<style>
+  :root{
+    --paper:#F6F3EC;
+    --paper-soft:#EFEAE0;
+    --ink:#2B3128;
+    --ink-soft:#5B6156;
+    --forest:#3F5344;
+    --forest-deep:#2C3D30;
+    --sage:#8A9B80;
+    --sage-line:#D8DCC9;
+    --clay:#B3573F;
+    --clay-soft:#E7C9BC;
+    --gold:#B98A2E;
+    --card-shadow: 0 1px 0 rgba(43,49,40,0.06);
+    --radius: 14px;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Pretendard",sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  #app{ min-height:100vh; display:flex; flex-direction:column; }
+
+  /* header */
+  header{
+    background:var(--forest);
+    color:#EFEDE3;
+    padding:18px 20px 16px;
+    position:sticky; top:0; z-index:20;
+    box-shadow:0 2px 10px rgba(0,0,0,0.12);
+  }
+  .hd-row{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .hd-title{ font-size:23px; font-weight:800; letter-spacing:-0.01em; }
+  .hd-sub{ font-size:12px; color:#C7D0C2; margin-top:2px; }
+  .staff-chip{
+    background:rgba(255,255,255,0.12);
+    border:1px solid rgba(255,255,255,0.2);
+    color:#EFEDE3;
+    padding:8px 14px;
+    border-radius:999px;
+    font-size:13px;
+    font-weight:600;
+    white-space:nowrap;
+  }
+  .reset-icon-btn{
+    background:rgba(255,255,255,0.1);
+    border:1px solid rgba(255,255,255,0.18);
+    color:#E7C9BC;
+    width:38px; height:38px; border-radius:50%;
+    font-size:16px; cursor:pointer; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .hd-actions{ display:flex; align-items:center; gap:8px; }
+  .progress-wrap{ margin-top:14px; }
+  .progress-nums{ display:flex; justify-content:space-between; font-size:12px; color:#C7D0C2; margin-bottom:6px; }
+  .progress-nums b{ color:#fff; font-size:14px; font-weight:700; }
+  .bar{ height:8px; background:rgba(255,255,255,0.15); border-radius:99px; overflow:hidden; }
+  .bar-fill{ height:100%; background:linear-gradient(90deg,#C99A5B,#B3573F); border-radius:99px; transition:width .4s ease; }
+
+  /* search */
+  .search-wrap{ padding:16px 20px 8px; }
+  .search-box{
+    display:flex; align-items:center; gap:10px;
+    background:#fff;
+    border:1.5px solid var(--sage-line);
+    border-radius:16px;
+    padding:14px 16px;
+  }
+  .search-box input{
+    border:none; outline:none; flex:1;
+    font-size:17px; background:transparent; color:var(--ink);
+  }
+  .search-box input::placeholder{ color:#A9AE9E; }
+  .search-icon{ color:var(--sage); flex-shrink:0; }
+  .clear-btn{
+    background:var(--paper-soft); border:none; color:var(--ink-soft);
+    width:26px; height:26px; border-radius:50%; font-size:14px; cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+
+  .tabs{ display:flex; gap:8px; padding:10px 20px 4px; }
+  .tab-btn{
+    flex:1; padding:10px 8px; border-radius:12px; border:1.5px solid var(--sage-line);
+    background:#fff; color:var(--ink-soft); font-size:13px; font-weight:600; cursor:pointer;
+  }
+  .tab-btn.active{ background:var(--forest); color:#fff; border-color:var(--forest); }
+
+  main{ flex:1; padding:8px 20px 100px; }
+
+  .empty-state{ text-align:center; padding:60px 20px; color:var(--ink-soft); }
+  .empty-state .big{ font-size:40px; margin-bottom:10px; }
+  .empty-state p{ font-size:14px; line-height:1.6; margin:4px 0; }
+
+  .walkin-cta{
+    display:block; width:100%; margin-top:18px;
+    background:var(--clay); color:#fff; border:none;
+    padding:16px; border-radius:14px; font-size:15px; font-weight:700; cursor:pointer;
+  }
+
+  .list{ display:flex; flex-direction:column; gap:10px; margin-top:8px; }
+  .row{
+    background:#fff; border-radius:14px; padding:14px 16px;
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    box-shadow:var(--card-shadow); cursor:pointer; border:1.5px solid transparent;
+  }
+  .row.checked{ border-color:#CFE0C6; background:#F5F9F1; }
+  .row-left{ min-width:0; }
+  .row-name{ font-size:16px; font-weight:700; display:flex; align-items:center; gap:8px; }
+  .row-meta{ font-size:12.5px; color:var(--ink-soft); margin-top:4px; }
+  .badges{ display:flex; flex-wrap:wrap; gap:5px; margin-top:7px; }
+  .badge{
+    font-size:11px; padding:3px 9px; border-radius:999px; font-weight:600;
+    background:var(--paper-soft); color:var(--ink-soft); white-space:nowrap;
+  }
+  .badge.member{ background:#F3E6C9; color:#7A5A16; }
+  .badge.walkin{ background:#EFD9D2; color:#8C3E28; }
+  .row-status{ flex-shrink:0; }
+  .check-dot{
+    width:34px; height:34px; border-radius:50%; border:2px solid var(--sage-line);
+    display:flex; align-items:center; justify-content:center; color:transparent; font-size:16px;
+  }
+  .check-dot.done{ background:var(--forest); border-color:var(--forest); color:#fff; }
+
+  /* modal overlay */
+  .overlay{
+    position:fixed; inset:0; background:rgba(30,33,27,0.5); z-index:50;
+    display:flex; align-items:flex-end; justify-content:center;
+    opacity:0; pointer-events:none; transition:opacity .2s ease;
+  }
+  .overlay.show{ opacity:1; pointer-events:auto; }
+  .sheet{
+    background:var(--paper); width:100%; max-width:520px; max-height:88vh; overflow-y:auto;
+    border-radius:20px 20px 0 0; padding:22px 22px 28px;
+    transform:translateY(20px); transition:transform .25s ease;
+  }
+  .overlay.show .sheet{ transform:translateY(0); }
+  .sheet-handle{ width:40px; height:4px; background:var(--sage-line); border-radius:99px; margin:0 auto 16px; }
+  .sheet-close{
+    position:absolute; top:18px; right:20px; background:none; border:none; font-size:20px; color:var(--ink-soft); cursor:pointer;
+  }
+
+  .detail-name{ font-size:22px; font-weight:800; }
+  .detail-region{ font-size:13px; color:var(--ink-soft); margin-top:3px; }
+  .detail-section{ margin-top:18px; }
+  .detail-label{ font-size:12px; font-weight:700; color:var(--sage); text-transform:none; margin-bottom:6px; letter-spacing:0.01em; }
+  .detail-text{ font-size:14.5px; line-height:1.6; color:var(--ink); background:#fff; border-radius:12px; padding:12px 14px; border:1px solid var(--sage-line); }
+  .qa-block{ margin-top:8px; }
+  .qa-who{ font-size:12px; color:var(--ink-soft); font-weight:600; margin-bottom:3px; }
+
+  .cta-row{ margin-top:22px; display:flex; gap:10px; }
+  .btn{
+    flex:1; padding:16px; border-radius:14px; font-size:16px; font-weight:700; border:none; cursor:pointer;
+  }
+  .btn-primary{ background:var(--forest); color:#fff; }
+  .btn-undo{ background:#fff; color:var(--clay); border:1.5px solid var(--clay-soft); }
+  .checked-banner{
+    margin-top:22px; background:#F5F9F1; border:1.5px solid #CFE0C6; color:var(--forest-deep);
+    padding:14px 16px; border-radius:14px; font-size:14px; font-weight:600;
+    display:flex; align-items:center; gap:8px;
+  }
+
+  /* walk-in form */
+  .field{ margin-top:14px; }
+  .field label{ font-size:13px; font-weight:700; color:var(--ink-soft); display:block; margin-bottom:6px; }
+  .field input, .field textarea{
+    width:100%; border:1.5px solid var(--sage-line); border-radius:12px; padding:12px 14px;
+    font-size:15px; font-family:inherit; color:var(--ink); background:#fff;
+  }
+  .field textarea{ resize:none; min-height:64px; }
+  .chip-select{ display:flex; flex-wrap:wrap; gap:8px; }
+  .chip-opt{
+    padding:9px 14px; border-radius:999px; border:1.5px solid var(--sage-line); background:#fff;
+    font-size:13px; font-weight:600; color:var(--ink-soft); cursor:pointer;
+  }
+  .chip-opt.picked{ background:var(--forest); color:#fff; border-color:var(--forest); }
+  .req{ color:var(--clay); }
+
+  .toast{
+    position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px);
+    background:var(--forest-deep); color:#fff; padding:12px 20px; border-radius:99px;
+    font-size:13.5px; font-weight:600; z-index:80; opacity:0; transition:all .25s ease; pointer-events:none;
+    box-shadow:0 6px 20px rgba(0,0,0,0.25);
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* dashboard */
+  .dash-grid{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-top:14px; }
+  .dash-card{ background:#fff; border-radius:14px; padding:14px; text-align:center; box-shadow:var(--card-shadow); }
+  .dash-num{ font-size:24px; font-weight:800; color:var(--forest); }
+  .dash-label{ font-size:11.5px; color:var(--ink-soft); margin-top:2px; }
+
+  .staff-modal-list{ display:flex; flex-direction:column; gap:10px; margin-top:18px; }
+  .staff-opt{
+    padding:16px; border-radius:14px; border:1.5px solid var(--sage-line); background:#fff;
+    font-size:16px; font-weight:700; text-align:left; cursor:pointer; color:var(--ink);
+  }
+  .staff-opt:active{ background:var(--paper-soft); }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <div class="hd-row">
+      <div onclick="goHome()" style="cursor:pointer;">
+        <div class="hd-title">마음SSUL루션 in 서울</div>
+        <div class="hd-sub">10월 4일 · 서울역 · 참가자 체크인</div>
+      </div>
+      <button class="staff-chip" id="staffChip" onclick="openStaffModal()">담당자 선택</button>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-nums">
+        <span>체크인 현황</span>
+        <span><b id="pgDone">0</b> / <span id="pgTotal">0</span>명</span>
+      </div>
+      <div class="bar"><div class="bar-fill" id="pgBar" style="width:0%"></div></div>
+      <button class="reset-icon-btn" style="width:auto;height:auto;padding:6px 12px;border-radius:999px;font-size:11px;font-weight:700;margin-top:10px;" onclick="showConfirm('체크인·현장등록 데이터를 모두 지웁니다. 되돌릴 수 없어요. 정말 초기화할까요?', resetAll)">⟲ 전체 초기화</button>
+    </div>
+  </header>
+
+  <div class="search-wrap">
+    <div class="search-box">
+      <span class="search-icon">⌕</span>
+      <input id="searchInput" type="text" inputmode="search" placeholder="이름 또는 전화번호 뒷자리 검색" oninput="onSearch()" autocomplete="off">
+      <button class="clear-btn" id="clearBtn" style="display:none" onclick="clearSearch()">✕</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" id="tabAll" onclick="setTab('all')">전체</button>
+    <button class="tab-btn" id="tabWait" onclick="setTab('wait')">미체크인</button>
+    <button class="tab-btn" id="tabDone" onclick="setTab('done')">체크인완료</button>
+    <button class="tab-btn" id="tabDash" onclick="setTab('dash')">현황</button>
+  </div>
+
+  <main id="main"></main>
+</div>
+
+<div class="overlay" id="detailOverlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <button class="sheet-close" onclick="closeDetail()">✕</button>
+    <div id="detailBody"></div>
+  </div>
+</div>
+
+<div class="overlay" id="walkinOverlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <button class="sheet-close" onclick="closeWalkin()">✕</button>
+    <div style="font-size:19px;font-weight:800;margin-bottom:4px;">현장 등록</div>
+    <div style="font-size:13px;color:var(--ink-soft);margin-bottom:6px;">명단에 없는 분을 빠르게 등록하고 바로 체크인해요.</div>
+
+    <div class="field">
+      <label>이름 <span class="req">*</span></label>
+      <input id="wiName" type="text" placeholder="이름 입력">
+    </div>
+    <div class="field">
+      <label>연락처 (선택)</label>
+      <input id="wiPhone" type="tel" placeholder="010-0000-0000">
+    </div>
+    <div class="field">
+      <label>어떻게 알고 오셨나요? (선택)</label>
+      <div class="chip-select" id="wiTypeChips"></div>
+    </div>
+    <div class="field">
+      <label>오늘 참석하시게 된 계기 (선택)</label>
+      <textarea id="wiReason" placeholder="한 줄로 남겨주세요"></textarea>
+    </div>
+
+    <div class="cta-row">
+      <button class="btn btn-primary" onclick="submitWalkin()">등록하고 체크인</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="staffOverlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <button class="sheet-close" onclick="closeStaffModal()">✕</button>
+    <div style="font-size:19px;font-weight:800;">이 기기를 사용하실 분</div>
+    <div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">체크인 기록에 담당자로 표시됩니다.</div>
+    <div class="staff-modal-list">
+      <button class="staff-opt" onclick="pickStaff('김지연 박사')">김지연 박사</button>
+      <button class="staff-opt" onclick="pickStaff('표태연 코치')">표태연 코치</button>
+      <button class="staff-opt" onclick="pickStaff('장서연 코치')">장서연 코치</button>
+      <button class="staff-opt" onclick="pickStaff('스탭')">스탭</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="confirmOverlay">
+  <div class="sheet" style="max-width:380px;">
+    <div class="sheet-handle"></div>
+    <div id="confirmBody" style="font-size:15px;line-height:1.6;color:var(--ink);font-weight:600;"></div>
+    <div class="cta-row">
+      <button class="btn btn-undo" onclick="closeConfirm()">취소</button>
+      <button class="btn" id="confirmActionBtn" style="background:var(--clay);color:#fff;" onclick="runConfirmAction()">확인</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const ROSTER = [{"id": "p001", "name": "이인혜", "region": "경기도 파주", "phone": "01090823110", "helpTypes": ["1:1 개별코칭(부모치유과정)", "부모성장학교"], "reason": "박사님 뵙고싶어요...^^", "qKim": "", "qPyo": "", "qJang": "", "more": ""}, {"id": "p002", "name": "권소영", "region": "용인시", "phone": "01095069539", "helpTypes": ["유튜브 일반 구독자"], "reason": "자녀양육 및 부모교육을 받고 싶어서", "qKim": "", "qPyo": "", "qJang": "", "more": ""}, {"id": "p003", "name": "박성혜", "region": "군산", "phone": "01064867125", "helpTypes": ["1:1 개별코칭(부모치유과정)", "유튜브 멤버십 구독"], "reason": "", "qKim": "", "qPyo": "", "qJang": "", "more": ""}, {"id": "p004", "name": "강희정", "region": "대치동", "phone": "01040265297", "helpTypes": ["1:1 개별코칭(부모치유과정)", "유튜브 멤버십 구독"], "reason": "계속 마음공부하고 싶어서", "qKim": "", "qPyo": "아이 말다툼이 있는데 여전보다 더 친숙하게 지내고 있어서 오는 자\n연스러운 현상으로 생각해도 될까요?", "qJang": "Al시대에 맞춰서 가정에서 아이를 어떻게 지도해야하는지...", "more": ""}, {"id": "p005", "name": "송상은", "region": "서울", "phone": "01043259621", "helpTypes": ["1:1 개별코칭(부모치유과정)"], "reason": "내마음의 상태와 아이들과의 관계개선", "qKim": "", "qPyo": "내 마음의 사용설명서가 뭘까요?", "qJang": "", "more": ""}, {"id": "p006", "name": "박수아", "region": "서울", "phone": "01096179621", "helpTypes": ["1:1 개별코칭(청소년과정)", "유튜브 멤버십 구독"], "reason": "마음숲 선생님들을 뵙고 질문하고 싶습니다", "qKim": "", "qPyo": "왜 똑같은 감정적 도돌이표에서 벗어날 수가 없을까요", "qJang": "애매모호한 삶을 살고 있는 것 같은데 \n하나의 뚜렷한 목표를 가지려면 어떻게 해야할까요", "more": "이런 기회 만들어주셔서 감사합니다"}, {"id": "p007", "name": "한태희", "region": "전북 군산시", "phone": "01034286202", "helpTypes": ["친구 추천으로 처음 알게 되었어요."], "reason": "나를 돌보고 싶어요.", "qKim": "", "qPyo": "", "qJang": "", "more": ""}, {"id": "p008", "name": "김영은", "region": "인천", "phone": "01074012625", "helpTypes": ["유튜브 멤버십 구독", "유튜브 일반 구독자"], "reason": "어려운 시기를 지나고 있는 청소년 자녀 양육에 도움 받고 싶고 \n제마음을 다스리는데 힘을 받고 싶습니다.", "qKim": "정서적 결핍을 물질로 채우려는 자퇴를 앞둔 고1 아이 대처법. \n어디까지 허용하고 어디까지 선을 그어줘야 하는걸까요.", "qPyo": "아이를 움직이는 대화 방법", "qJang": "아이를 움직이는 동기부여 방법", "more": "항상 도움받고 있습니다. 감사합니다."}, {"id": "p009", "name": "김해정", "region": "경기도 하남시", "phone": "01038597549", "helpTypes": ["1:1 개별코칭(부모치유과정)", "사전상담(대면/비대면) 진행", "유튜브 멤버십 구독"], "reason": "다시한번 더 나를 돌아보고자", "qKim": "대학생 여자아이 hsp 성향에 완벽주의라 과몰입하다 번아웃이오고 \n팀과제 조율하다 어려움이 생겨 학업을 쉬고있어요  \n완벽주의를 내려놓고 과제 끈기있게 완성하고 타인과 소통하며 \n즐겁게 학업를 할수있도록 어떻게 도와주어야할지\n아이 스스로 찾아가도록 조용히 기다려줘야할지 \n\n우울증약과 콘서타 같이 복용중인데 콘서타약 의존도가 높아져 고민입니다", "qPyo": "", "qJang": "", "more": "상담후에도 지속적인 공부가 필요하다고 느끼고있습니다\n유튜브통해서 소통해주시고 책도 추천해주셔서 감사합니다"}, {"id": "p010", "name": "채선", "region": "경기도 안양시", "phone": "01076829922", "helpTypes": ["TheBOX더박스(부모치유학교)", "부모성장학교", "유튜브 멤버십 구독"], "reason": "박사님 뵙고 말씀 듣고 싶어요.", "qKim": "두려움없는 인생을 살게 해주셔서 감사합니다", "qPyo": "고맙습니다.건강하셔요", "qJang": "고맙습니다.건강하셔요", "more": "언제나 건강하셔요! 마음숲을 온 마음 다해 응원합니다."}, {"id": "p011", "name": "강송희", "region": "대구", "phone": "01053395530", "helpTypes": ["1:1 개별코칭(부모치유과정)", "TheBOX더박스(부모치유학교)", "부모성장학교", "사전상담(대면/비대면) 진행", "유튜브 멤버십 구독"], "reason": "꼭 참석하고 싶습니다 ❤️", "qKim": "", "qPyo": "", "qJang": "", "more": ""}, {"id": "p012", "name": "박해원", "region": "서울", "phone": "01047070393", "helpTypes": ["1:1 개별코칭(부모치유과정)", "1:1 개별코칭(청소년과정)", "TheBOX더박스(부모치유학교)", "부모성장학교", "사전상담(대면/비대면) 진행", "유튜브 멤버십 구독"], "reason": "", "qKim": "", "qPyo": "", "qJang": "", "more": ""}, {"id": "p013", "name": "심숙화", "region": "서울", "phone": "01088742642", "helpTypes": ["1:1 개별코칭(부모치유과정)", "1:1 개별코칭(청소년과정)", "부모성장학교"], "reason": "지속적으로 저의 내면을 들여다보고 깨닫는 시간을 갖고싶습니다", "qKim": "", "qPyo": "", "qJang": "", "more": ""}, {"id": "p014", "name": "구혜진", "region": "일산", "phone": "01044014771", "helpTypes": ["1:1 개별코칭(부모치유과정)"], "reason": "아이들과 더 나은 관계를 형상하기 위해서", "qKim": "", "qPyo": "", "qJang": "", "more": ""}, {"id": "p015", "name": "김혜원", "region": "대구", "phone": "01055295838", "helpTypes": ["1:1 개별코칭(부모치유과정)", "1:1 개별코칭(청소년과정)", "부모성장학교", "사전상담(대면/비대면) 진행", "유튜브 멤버십 구독"], "reason": "당연히 가야함^^", "qKim": "", "qPyo": "", "qJang": "", "more": ""}, {"id": "p016", "name": "김현지", "region": "대전", "phone": "01043797706", "helpTypes": ["1:1 개별코칭(부모치유과정)", "사전상담(대면/비대면) 진행", "유튜브 멤버십 구독"], "reason": "지난번 대구 모임이 너무 좋았어서 이번에도 참석하고 싶습니다. \n마음SSUL루션을 통해 긍정적인 에너지를 얻고 성장하는 시간이 되길 기대합니다.", "qKim": "", "qPyo": "", "qJang": "", "more": ""}, {"id": "p017", "name": "민지영", "region": "서울 강남구", "phone": "01062487234", "helpTypes": ["유튜브 일반 구독자"], "reason": "상처치유와 마음성장을 위해 도움 받고 싶습니다.", "qKim": "", "qPyo": "", "qJang": "", "more": ""}, {"id": "p018", "name": "임지영", "region": "평택", "phone": "01081503522", "helpTypes": ["1:1 개별코칭(부모치유과정)", "유튜브 멤버십 구독"], "reason": "마음숲을 사랑합니다♡", "qKim": "", "qPyo": "", "qJang": "", "more": ""}, {"id": "p019", "name": "손정민", "region": "서울시강서구", "phone": "01062345301", "helpTypes": ["유튜브 멤버십 구독", "유튜브 일반 구독자"], "reason": "부모코칭에 관심이 많습니다.공부를 시작해보고싶고 \n아이에게  코칭을 배워 저도 성장하고싶습니다좋은기회에 꼭 참석해보고싶습니다", "qKim": "코칭 자격증이나 전문가가 되는법이 궁금합니다", "qPyo": "느린학습자 인지치료나 이들에게 맞는 부모 아이코칭 이 따로있을까요", "qJang": "청소년뿐아니라 발달장애인들에게 어떻게 적용하면좋을까요", "more": ""}, {"id": "p020", "name": "안미형", "region": "서울", "phone": "01023039219", "helpTypes": ["1:1 개별코칭(부모치유과정)", "TheBOX더박스(부모치유학교)", "부모성장학교", "사전상담(대면/비대면) 진행"], "reason": "나의 삶과 아이들의 단단하고 행복한 삶을 위해서 입니다. 코칭님들 사랑합니다~~", "qKim": "", "qPyo": "", "qJang": "", "more": ""}, {"id": "p021", "name": "안임수", "region": "수원", "phone": "01044552488", "helpTypes": ["1:1 개별코칭(부모치유과정)", "사전상담(대면/비대면) 진행"], "reason": "좋은 강의 함께 하고 싶어서!!", "qKim": "", "qPyo": "", "qJang": "", "more": ""}, {"id": "p022", "name": "김유정", "region": "경기도 수원", "phone": "01071176091", "helpTypes": ["1:1 개별코칭(부모치유과정)", "1:1 개별코칭(청소년과정)", "유튜브 멤버십 구독"], "reason": "배우고 싶어요", "qKim": "", "qPyo": "", "qJang": "", "more": ""}, {"id": "p023", "name": "김윤지", "region": "대구", "phone": "01096462838", "helpTypes": ["1:1 개별코칭(부모치유과정)", "부모성장학교", "유튜브 멤버십 구독"], "reason": "박사님 강의는 제가 인생에서 고민할 때 마다 답을 주시죠 줌으로만 뵈어서 직접 뵙고 싶어요", "qKim": "", "qPyo": "", "qJang": "", "more": ""}, {"id": "p024", "name": "윤경미", "region": "대전", "phone": "01066357265", "helpTypes": ["유튜브 일반 구독자"], "reason": "우리아이랑 원활한 소통을 위해", "qKim": "", "qPyo": "", "qJang": "", "more": ""}, {"id": "p025", "name": "문수경", "region": "서울", "phone": "01027879769", "helpTypes": ["유튜브 멤버십 구독"], "reason": "부모코칭을 배워서  어린아이를키우는부모님들에게 실제적인 도움을주고 싶습니다", "qKim": "학교문제등 청소년 시기의 큰 어려움을 미리 예방하기위해서는 \n유아, 초등 부모교육이 중요한것 같습니다\n바쁘시겠지만 계획이 있으신지요?^^", "qPyo": "", "qJang": "", "more": ""}, {"id": "p026", "name": "윤근영", "region": "서울", "phone": "01027075927", "helpTypes": ["1:1 개별코칭(부모치유과정)", "유튜브 멤버십 구독"], "reason": "엄마로서 또 한개인으로서 끊임없이 성장하고 싶습니다. 감사합니다.", "qKim": "마음숲에서 20회의 상담을 진행하며 저의 내면과 과거를 상당부분 치유한 엄마입니다. \n모든 문제가 완벽히 해결되지는 않았지만 그럭저럭 잘 지낸다 생각하고 있던 차, \n사소한 말싸움이 번져서 큰아이로부터 '미친년'이란 소리를 듣고 \n마음 한구석이 도려내진 거 같습니다. 아이는 이미 26살 완전한 성인입니다. \n그 이후 저는 아이와 대화할 필요를 느끼지 못하고 지내고 있어요.\n더이상 아이도 아닌데 붙잡고 할말도 없다는 생각이지만 딸과 편하게 지내고 싶어요. \n아직 덜어내고 돌아봐야 할 것들이 제 안에 남은 걸까요? \n지혜를 나눠주세요 박사님 감사합니다", "qPyo": "타인과 정서적 교류가 쉽지 않은 아이입니다. \n외조부모님과 엄마인 저 이외엔 마음 편히 관계를 맺지 못하고 있어요. \n가끔 외로워하고 내가 문제인가 하는 아이에게 저는 괜챦다고 말해줍니다. \n혹시 선생님이라면 아이에게 어떤 말을 들려주시고 싶으세요? \n표선생님의 지혜 나눠주시면 감사하겠습니다.", "qJang": "코치로서 가장 필요한 자질은 어떤 것일까요? \n선생님의 귀한 의견 듣고 싶습니다 \n감사합니다.", "more": "안녕하세요 선생님들. 윤교맘 윤근영입니다. \n서울에서 뵙게되는 날 고대할게요. \n자리 마련해주셔서 감사합니다!"}, {"id": "p027", "name": "신예숙", "region": "서울 송파구", "phone": "01036103403", "helpTypes": ["1:1 개별코칭(부모치유과정)", "유튜브 멤버십 구독"], "reason": "오랫만에 박사님이랑 표선생님도 뵙고 좋은말씀 듣고싶습니다.", "qKim": "", "qPyo": "", "qJang": "", "more": ""}, {"id": "p028", "name": "김고미", "region": "대구", "phone": "01038139506", "helpTypes": ["1:1 개별코칭(부모치유과정)", "1:1 개별코칭(청소년과정)", "TheBOX더박스(부모치유학교)", "부모성장학교", "유튜브 멤버십 구독"], "reason": "박사님과 코치님들을 꼭 뵙고 강의도 듣고 싶습니다. 또 마음숲에 연결된 많은 분들과 함께 하는 소중한 자리에 참여하고 싶어 신청합니다.", "qKim": "풍요롭고 정돈된 삶을 살려면 어떤 마인드나 삶의 태도를 가져야 할까요?", "qPyo": "", "qJang": "", "more": "모두 너무 뵙고 싶어요!!♡"}, {"id": "p029", "name": "최혜윤", "region": "대전", "phone": "01032483125", "helpTypes": ["1:1 개별코칭(부모치유과정)", "부모성장학교", "유튜브 멤버십 구독"], "reason": "만남의 시간이 너무 소중합니다. 함께 하고싶습니다.", "qKim": "", "qPyo": "", "qJang": "", "more": ""}, {"id": "p030", "name": "손성애", "region": "목포", "phone": "01056985116", "helpTypes": ["1:1 개별코칭(부모치유과정)", "부모성장학교", "유튜브 멤버십 구독"], "reason": "더 가벼워지기 위해서!!!!", "qKim": "굿라이프 궁금합니다", "qPyo": "삶이란?", "qJang": "결혼이란?", "more": ""}, {"id": "p031", "name": "김미향", "region": "남해군", "phone": "01037356822", "helpTypes": ["1:1 개별코칭(부모치유과정)", "TheBOX더박스(부모치유학교)", "부모성장학교", "사전상담(대면/비대면) 진행", "유튜브 멤버십 구독"], "reason": "귀한 배움의 기회를 마련해주시는데 참석안할 이유가 없어서입니다", "qKim": "ㆍ", "qPyo": "ㆍ", "qJang": "ㆍ", "more": "참석하시는 엄마들중에 마음치유작업으로인해 바뀐 내생활, 내환경~ 에 대해 짧은 소감,공감시간 가져도 좋을것 같습니다~"}, {"id": "p032", "name": "김보윤", "region": "서울", "phone": "01051650344", "helpTypes": ["1:1 개별코칭(부모치유과정)", "부모성장학교", "유튜브 멤버십 구독"], "reason": "맘숲 강의가 있는곳이라면 어디라도 가야죠~♡", "qKim": "", "qPyo": "", "qJang": "", "more": ""}, {"id": "p033", "name": "임소진", "region": "서울", "phone": "01082457010", "helpTypes": ["1:1 개별코칭(부모치유과정)", "1:1 개별코칭(청소년과정)", "부모성장학교", "유튜브 멤버십 구독"], "reason": "대면 강의에서 코치님들의 가르침을 받고 싶습니다.", "qKim": "나를 진심으로 사랑하는 방법", "qPyo": "나의 마음을 직접적으로 느껴주는 확실한 방법은 무엇일까요", "qJang": "자녀를 조건 없이 사랑하는 방법. 자녀에 대한나의 기대, 기준과 같은 걸림돌에서 벗어나서 순수하게 사랑하는법", "more": ""}, {"id": "p034", "name": "구본신", "region": "서울 광진구", "phone": "01074200622", "helpTypes": ["유튜브 멤버십 구독"], "reason": "부모코칭", "qKim": "", "qPyo": "", "qJang": "", "more": ""}, {"id": "p035", "name": "옥창희", "region": "부산", "phone": "01075516928", "helpTypes": ["1:1 개별코칭(부모치유과정)", "부모성장학교", "사전상담(대면/비대면) 진행", "유튜브 멤버십 구독"], "reason": "박사님 코치님 보고싶고 강의를 현장에서듣고 느끼고 감동으로 담아오고싶습니다", "qKim": "", "qPyo": "", "qJang": "", "more": ""}, {"id": "p036", "name": "황성화", "region": "대구", "phone": "01065098665", "helpTypes": ["1:1 개별코칭(부모치유과정)"], "reason": "", "qKim": "", "qPyo": "", "qJang": "", "more": ""}, {"id": "p037", "name": "인보라", "region": "서울", "phone": "01049078406", "helpTypes": ["1:1 개별코칭(부모치유과정)", "사전상담(대면/비대면) 진행", "유튜브 멤버십 구독"], "reason": "박사님과 선생님의 말씀을 더 듣고싶습니다", "qKim": "", "qPyo": "", "qJang": "", "more": ""}, {"id": "p038", "name": "엄윤주", "region": "청주", "phone": "01034742589", "helpTypes": ["1:1 개별코칭(부모치유과정)", "1:1 개별코칭(청소년과정)", "유튜브 멤버십 구독"], "reason": "마음숲에서 많이 배우기는 했지만 아직 많이 부족해요~ 선생님들 모두 모두 보고 싶었습니다 ㅎㅎ 용기내 신청해요~", "qKim": "", "qPyo": "", "qJang": "", "more": ""}, {"id": "p039", "name": "엄선영", "region": "청주", "phone": "01096800070", "helpTypes": ["도움은 받지 않았지만 같이 방문하고자 합니다"], "reason": "내 감정을 알고싶어요 부모코칭 청소년코칭 궁금합니다", "qKim": "", "qPyo": "", "qJang": "", "more": ""}, {"id": "p040", "name": "전미선", "region": "안양", "phone": "01031876691", "helpTypes": ["유튜브 일반 구독자"], "reason": "부모변화", "qKim": "", "qPyo": "", "qJang": "", "more": ""}, {"id": "p041", "name": "심인영", "region": "서울", "phone": "01055664753", "helpTypes": ["유튜브 일반 구독자"], "reason": "아이문제", "qKim": "아이가 중1인데 환청이 들려 입원중입니다 퇴원하고 나서 학교를 다시 보내야할지 자퇴할지 고민입니다", "qPyo": "", "qJang": "", "more": ""}, {"id": "p042", "name": "이정애", "region": "서울 성북구", "phone": "01071940625", "helpTypes": ["유튜브 통해서 알아가는 단계"], "reason": "사춘기 아이들과 소통하고 니의 마음 챙기기 위해", "qKim": "관계에서  선 긋기를 하며 자신이 보호가 되지만 \n관켸가 좁아지고  공허함  생기것을 어떻게 해야하나요?", "qPyo": "사춘기 아이들과의 소통에서  받아드리는부분 경계를 어디까지 일까요?", "qJang": "빠른 시대와 학교에서의 입시의  괴리감  그러면서 부모가  챙겨야하는 부분들이  무엇이  있을까요?", "more": ""}, {"id": "p043", "name": "민선홍", "region": "대전", "phone": "01027129367", "helpTypes": ["1:1 개별코칭(부모치유과정)", "1:1 개별코칭(청소년과정)", "사전상담(대면/비대면) 진행", "유튜브 멤버십 구독"], "reason": "현장에서 듣고 싶습니다", "qKim": "", "qPyo": "", "qJang": "", "more": ""}, {"id": "p044", "name": "오한나", "region": "경기 의정부", "phone": "01084864986", "helpTypes": ["유튜브 일반 구독자"], "reason": "아이등교거부문제", "qKim": "", "qPyo": "", "qJang": "", "more": ""}, {"id": "p045", "name": "김경혜", "region": "부산", "phone": "01020199035", "helpTypes": ["1:1 개별코칭(부모치유과정)", "TheBOX더박스(부모치유학교)", "부모성장학교", "유튜브 멤버십 구독"], "reason": "마음공부는끝이없는것같습니다.박사님,코칭님들 현장강의듣고에너지느끼고싶습니다.", "qKim": "", "qPyo": "", "qJang": "", "more": ""}, {"id": "p046", "name": "임수미", "region": "경기도", "phone": "01047493993", "helpTypes": ["1:1 개별코칭(청소년과정)", "TheBOX더박스(부모치유학교)", "부모성장학교"], "reason": "느슨해진 제자신을 다잡고 싶습니다", "qKim": "박사님 말씀대로 내려놓으려 많이 노력하고 있습니다\n그런데\n그 끝은 없는것 이겠죠?\n사람이다보니 매일 매시간이 알아차리고 내려놓는것이  일상입니다. 내가 해줄것이 없을을 아는데도 왜 그 바라는마음이 계속 올라올까요 그때마다 내가 할것이 없다..이마음으로 계속 나아가면 될런지요", "qPyo": "코치님..그저  감사하다 말씀드리고 싶었습니다..지난번 통화에 잘했다 해주셔서 힘이 났습니다\n참석해서 코치님께서 전해주시는 말씀들 귀담아 듣겠습니다", "qJang": "지난 영상에서 코치님의 감정인형을 잘 보았습니다\n너무 감명깊게 보았습니다", "more": ""}, {"id": "p047", "name": "안희남", "region": "하남시", "phone": "01051546127", "helpTypes": ["1:1 개별코칭(부모치유과정)"], "reason": "여러분들과 공감하고 싶고, 치유의 과정을 나누고 싶습니다", "qKim": "", "qPyo": "아이가 뭐 때문에 힘들어 방황하는지 그 마음을 좀 알고 싶어요. 그 마음을 알고 사과하고 어루만져 주고 싶습니다", "qJang": "", "more": ""}, {"id": "p048", "name": "이진희", "region": "목동", "phone": "01022238930", "helpTypes": ["1:1 개별코칭(부모치유과정)", "TheBOX더박스(부모치유학교)", "부모성장학교", "유튜브 멤버십 구독"], "reason": "행복한 삶으로 가는 길에 있는 분들과 소통하고.  만나고 싶어요", "qKim": "", "qPyo": "", "qJang": "", "more": ""}, {"id": "p049", "name": "이수미", "region": "경기도 평택시", "phone": "01028708653", "helpTypes": ["1:1 개별코칭(부모치유과정)", "사전상담(대면/비대면) 진행", "유튜브 멤버십 구독"], "reason": "사전상담과 10회기 상담을 마치고 나서 다른 삶을 살아가는 초입에 있습니다. 현장에서 선생님들 말씀을 다시 듣고 에너지를 받고 싶어요.", "qKim": "", "qPyo": "", "qJang": "", "more": "박사님과 코치님들을 만날 생각을 하니 벌써 설렙니다~~\n이런 자리 만들어 주셔서 감사합니다!!"}, {"id": "p050", "name": "김정아", "region": "서울", "phone": "01088918793", "helpTypes": ["유튜브 멤버십 구독"], "reason": "본인과 아이 치유", "qKim": "", "qPyo": "", "qJang": "", "more": ""}, {"id": "p051", "name": "김현의", "region": "서울", "phone": "01063729894", "helpTypes": ["유튜브 멤버십 구독", "유튜브 일반 구독자"], "reason": "불안.우울. 등교거부하는 중3첫째딸이 다 극복하고 본인인생 잘 살아가는 어른으로 성장 할 수 있기만을 바랍니다. 정말 방법을 모르겠고 많이 지쳤습니다. 도움받고 싶습니다", "qKim": "미디어 통제 격렬하게 반응하는 아이 어떻게.해야할까요 통제하려다 몸싸움나고 경찰도 옵니다 ㅠㅠ\n\n사실은 다 포기하고 내가 하고픈거 하며 살고만 싶습니다.  엄마로서.이런마음 들때마다 죄책감듭니다.", "qPyo": "아이 감정 무조건 수용만이.답인가요?", "qJang": "청소면 코칭 프로그램 수강하고 싶습니다.", "more": "아이도 살고 저도 사는.실질적 방법을 배우고 싶습니다"}, {"id": "p052", "name": "조경숙", "region": "서울", "phone": "01055044284", "helpTypes": ["유튜브 일반 구독자"], "reason": "지인 추천", "qKim": "", "qPyo": "", "qJang": "", "more": ""}, {"id": "p053", "name": "부경필", "region": "서울 송파구", "phone": "01024289574", "helpTypes": ["유튜브 일반 구독자"], "reason": "고교생 아이 문제로 저와 아내가 많이 힘듭니다. 아이에게 어떻게 대해야 할지와 함께 저희 스스로 어떻게 마음을 지켜야 할지 직접 배우고 싶습니다.", "qKim": "원래 중2까지 모범적이고 착했던 아이가 \n중3부터 학교 등교를 거부하고 집에만 있고 \n고등학교 와서도 등교거부하고 마음도 점점 삐뚤어지는 것 같습니다. \n부모인 저희가 어떻게 대해야 할까요.", "qPyo": "자꾸 등교거부하고 엇나가는 아이를 대하는 \n부모인 저희의 감정을 어떻게 다스리면서 아이를 대해야 할까요", "qJang": "등교거부하고 핸드폰만 보고 \n자극적인 친구와 남자친구만 찾는 아이를 \n바꾸기 위해 무엇부터 시작해야 할까요", "more": ""}, {"id": "p054", "name": "유명희", "region": "서울시 송파구", "phone": "01054452018", "helpTypes": ["유튜브 멤버십 구독"], "reason": "고1딸아이  중3부터 시작된 사춘기로인해 힘든시간을 보내고 있습니다. \n고등올라와서 공부하려해도 못하니 포기하고 등교도 잘 안합니다. \n여름방학 부터 점점 밤낮이 불규칙해지더니  현재 밤낮이 바껴서 등교하기 힘드네요. \n또한 핸드폰중독 도파민 중독인것 같습니다.", "qKim": "중3부터 번아웃 사춘기 심하게와서 중학교 힘들게 졸업했습니다. \n강성부모 아니여서 이해하고 기다려주려고 하는데 \n이 기다림이 너무 막연하고 힘이드네요. \n고등와서 학업을 여전히 이어나가질 못하고 \n결국 다니는학원없고 놀기만하니 방학부터 밤낮이 바뀌고 2학기때 결석횟수가 많아지네요...  \n학군지에서 공부할 의지가 없으니 학교다니기 싫다고했고 현재 그런상황입니다.  \n아이를 믿어주고 기다려준다는것에 대한 믿음이 흔들리려고합니다. 조언듣고싶습니다.", "qPyo": "", "qJang": "나름 중2때까지 학급회장 전교회장까지 했던아이가 \n무너지더니 지금은 꿈을 찾지 못하고 학교도 잘 다니질 못합니다. \n기관 (정신과) 도움을 1년정도 받았고 아이가 7월쯤 그만먹겠다 하여 \n지금은 약 복용을 하지않고 있습니다. \n약 중단후 방학이고 늦게자는 습관이 생겨 \n낮밤이 바뀌어 2학기학교 다니기가 힘이들어  \n(심리상담이나 정신과 )도움을 받자고 하여도 싫다고합니다. \n현재 관심사는 남자. 외모. 꾸미기... 놀기 핸드폰 인스타... 도파민즐거움만 찾습니다. \n부모 이야기는 잔소리로만 들리니 아이를  어떻게 코칭해야할지 모르겠습니다.", "more": ""}, {"id": "p055", "name": "구정운", "region": "경기도 안양시 동안구", "phone": "01071122086", "helpTypes": ["1:1 개별코칭(부모치유과정)", "유튜브 일반 구독자"], "reason": "내인생에 대한 고민", "qKim": "부모가 아닌 스스로의 나 다운 인생을 어떻게 살아야 하니요?", "qPyo": "일상에서 실천할 수 있는 감정조절 방법을 알고 싶습니다.", "qJang": "아이들의 마음을 읽는 노하우가 궁금합니다.", "more": ""}, {"id": "p056", "name": "김소연", "region": "서울", "phone": "01088416056", "helpTypes": ["유튜브 멤버십 구독", "유튜브 일반 구독자"], "reason": "상담에 참여하고 싶었는데, 어려움이 있어 고민을 하고 있었습니다. 이렇게 좋은 기회에 박사님을 직접 뵙고싶습니다.", "qKim": "", "qPyo": "", "qJang": "", "more": ""}, {"id": "p057", "name": "이종선", "region": "제주도", "phone": "01082158000", "helpTypes": ["유튜브 일반 구독자"], "reason": "자녀의 비행이 저 때문이라는 사실을 마음숲을 통해 알게 되어 공부하고 싶어 신청합니다.", "qKim": "아이의 문제가 제 문제임을 알았습니다. \n그 문제를 고치려 애쓰나 배우자와 합의점 찾기가 너무 어렵습니다. \n비난 받을때 자꾸 제 자신이 무너집니다.", "qPyo": "", "qJang": "", "more": ""}, {"id": "p058", "name": "김남주", "region": "의정부", "phone": "01033264631", "helpTypes": ["1:1 개별코칭(부모치유과정)", "부모성장학교"], "reason": "", "qKim": "", "qPyo": "", "qJang": "", "more": ""}, {"id": "p059", "name": "우정란", "region": "광주", "phone": "01053742423", "helpTypes": ["1:1 개별코칭(부모치유과정)"], "reason": "현장의에너지를 직접느끼고싶어요", "qKim": "아이가 등교거부이런말은하지않지만.지각이런건 아이의행동에따른문제이겠지요?", "qPyo": "", "qJang": "", "more": ""}, {"id": "p060", "name": "김태연", "region": "수원", "phone": "01041907265", "helpTypes": ["1:1 개별코칭(부모치유과정)", "1:1 개별코칭(청소년과정)", "유튜브 멤버십 구독"], "reason": "청소년 코칭에 대해 자세히 알고싶어요", "qKim": "", "qPyo": "", "qJang": "", "more": ""}, {"id": "p061", "name": "박정애", "region": "부산", "phone": "01076079755", "helpTypes": ["1:1 개별코칭(부모치유과정)", "TheBOX더박스(부모치유학교)", "부모성장학교", "사전상담(대면/비대면) 진행", "유튜브 멤버십 구독"], "reason": "아이엠기법궁금합니다", "qKim": "", "qPyo": "", "qJang": "", "more": ""}, {"id": "p062", "name": "박경아", "region": "서울", "phone": "01087004538", "helpTypes": ["1:1 개별코칭(부모치유과정)", "1:1 개별코칭(청소년과정)", "TheBOX더박스(부모치유학교)", "부모성장학교", "유튜브 멤버십 구독"], "reason": "많은 사람의 고민을 뭉쳐보면 살수있지 않을까?뭉쳐야산다? 살고싶어서", "qKim": "", "qPyo": "", "qJang": "", "more": ""}, {"id": "p063", "name": "이지영", "region": "울산", "phone": "01046109872", "helpTypes": ["TheBOX더박스(부모치유학교)", "유튜브 멤버십 구독", "유튜브 일반 구독자"], "reason": "마음공부를 통한 내적치유", "qKim": "", "qPyo": "", "qJang": "", "more": ""}, {"id": "p064", "name": "김은경", "region": "남양주시", "phone": "01072327179", "helpTypes": ["1:1 개별코칭(부모치유과정)", "사전상담(대면/비대면) 진행"], "reason": "마음의 편안함을 다시찾기위해서", "qKim": "2년다되가는데 아이가 학폭당했던 기억을잊지못해서 아직힘들어합니다", "qPyo": "내마음이 편해지려면 가장 좋은 방법알려주세요", "qJang": "중3아이인데 공부전혀안하는 아이인데 그냥둬도 될까요", "more": "무료강연 앞으로도 계속 있었으면 합니다 감사합니다"}];
+
+// ---- Supabase 설정: 프로젝트 만든 뒤 아래 두 줄만 채워넣으세요 ----
+// Supabase 대시보드 > Project Settings > API 에서 확인
+const SUPABASE_URL = 'https://crsisnliebpseyfrbusz.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_hukmpd6rQ7z86YNWpLHa7g_mZmKIlzd';
+// -----------------------------------------------------------
+
+const sb = (SUPABASE_URL.startsWith('http') && !SUPABASE_ANON_KEY.startsWith('YOUR_'))
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
+
+const WALKIN_TYPE_OPTIONS = ['유튜브 멤버십 구독','유튜브 일반 구독자','1:1 코칭 경험','지인 추천','처음 방문'];
+
+let state = { checkins: {}, walkins: [] };
+let staffName = null;
+let pendingAfterStaff = null;
+let currentTab = 'all';
+let searchQuery = '';
+let wiPicked = new Set();
+let pollTimer = null;
+let configWarned = false;
+
+function memberBadgeClass(t){
+  if(t.includes('멤버십')) return 'badge member';
+  return 'badge';
+}
+
+function checkConfig(){
+  if(!sb){
+    if(!configWarned){
+      configWarned = true;
+      showToast('Supabase 연결 정보가 비어있어요. 코드 상단을 채워주세요');
+    }
+    return false;
+  }
+  return true;
+}
+
+async function loadState(){
+  if(!checkConfig()){ render(); return; }
+  try{
+    const [{ data: checkinRows, error: e1 }, { data: walkinRows, error: e2 }] = await Promise.all([
+      sb.from('checkins').select('*'),
+      sb.from('walkins').select('*')
+    ]);
+    if(e1 || e2) throw (e1 || e2);
+
+    const checkins = {};
+    (checkinRows || []).forEach(r => { checkins[r.id] = { at: r.checked_in_at, staff: r.staff }; });
+    const walkins = (walkinRows || []).map(r => ({
+      id: r.id, name: r.name, phone: r.phone || '', helpTypes: r.help_types || [], reason: r.reason || ''
+    }));
+    state = { checkins, walkins };
+  }catch(e){
+    showToast('데이터를 불러오지 못했어요. 연결을 확인해주세요');
+  }
+  render();
+}
+
+async function upsertCheckin(id, staff){
+  if(!checkConfig()) return;
+  const { error } = await sb.from('checkins').upsert({ id, checked_in_at: new Date().toISOString(), staff });
+  if(error){ showToast('저장 중 문제가 발생했어요. 다시 시도해주세요'); return; }
+  await loadState();
+}
+
+async function removeCheckin(id){
+  if(!checkConfig()) return;
+  const { error } = await sb.from('checkins').delete().eq('id', id);
+  if(error){ showToast('저장 중 문제가 발생했어요. 다시 시도해주세요'); return; }
+  await loadState();
+}
+
+async function insertWalkin(row){
+  if(!checkConfig()) return;
+  const { error } = await sb.from('walkins').insert(row);
+  if(error){ showToast('등록 중 문제가 발생했어요. 다시 시도해주세요'); return false; }
+  return true;
+}
+
+let confirmCallback = null;
+function showConfirm(message, onConfirm){
+  document.getElementById('confirmBody').textContent = message;
+  confirmCallback = onConfirm;
+  document.getElementById('confirmOverlay').classList.add('show');
+}
+function closeConfirm(){
+  document.getElementById('confirmOverlay').classList.remove('show');
+  confirmCallback = null;
+}
+function runConfirmAction(){
+  const cb = confirmCallback;
+  closeConfirm();
+  if(cb) cb();
+}
+
+async function deleteWalkin(id){
+  if(!checkConfig()) return;
+  const { error: e1 } = await sb.from('checkins').delete().eq('id', id);
+  const { error: e2 } = await sb.from('walkins').delete().eq('id', id);
+  if(e1 || e2){ showToast('삭제 중 문제가 발생했어요'); return; }
+  await loadState();
+  closeDetail();
+  showToast('현장등록이 삭제됐어요');
+}
+
+async function resetAll(){
+  if(!checkConfig()) return;
+  const { error: e1 } = await sb.from('checkins').delete().neq('id', '__never__');
+  const { error: e2 } = await sb.from('walkins').delete().neq('id', '__never__');
+  if(e1 || e2){ showToast('초기화 중 문제가 발생했어요'); return; }
+  showToast('초기화 완료됐어요');
+  await loadState();
+}
+
+function subscribeRealtime(){
+  if(!sb) return;
+  sb.channel('checkin-sync')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'checkins' }, () => loadState())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'walkins' }, () => loadState())
+    .subscribe();
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=> t.classList.remove('show'), 1800);
+}
+
+function openStaffModal(){ document.getElementById('staffOverlay').classList.add('show'); }
+function closeStaffModal(){
+  if(!staffName) return; // must pick one first time
+  document.getElementById('staffOverlay').classList.remove('show');
+}
+function pickStaff(name){
+  staffName = name;
+  document.getElementById('staffChip').textContent = name;
+  document.getElementById('staffOverlay').classList.remove('show');
+  showToast(name + '님으로 체크인 기기가 설정됐어요');
+  if(pendingAfterStaff){
+    const fn = pendingAfterStaff;
+    pendingAfterStaff = null;
+    fn();
+  }
+}
+
+function goHome(){
+  closeDetail();
+  closeWalkin();
+  closeConfirm();
+  document.getElementById('searchInput').value = '';
+  searchQuery = '';
+  document.getElementById('clearBtn').style.display = 'none';
+  currentTab = 'all';
+  ['tabAll','tabWait','tabDone','tabDash'].forEach(id => document.getElementById(id).classList.remove('active'));
+  document.getElementById('tabAll').classList.add('active');
+  window.scrollTo({top:0, behavior:'smooth'});
+  render();
+}
+
+function setTab(t){
+  currentTab = t;
+  ['tabAll','tabWait','tabDone','tabDash'].forEach(id => document.getElementById(id).classList.remove('active'));
+  document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.add('active');
+  render();
+}
+
+function onSearch(){
+  searchQuery = document.getElementById('searchInput').value.trim();
+  document.getElementById('clearBtn').style.display = searchQuery ? 'flex' : 'none';
+  if(searchQuery && currentTab === 'dash'){ currentTab = 'all'; }
+  render();
+}
+function clearSearch(){
+  document.getElementById('searchInput').value = '';
+  searchQuery = '';
+  document.getElementById('clearBtn').style.display = 'none';
+  render();
+}
+
+function normDigits(s){ return (s||'').replace(/\D/g,''); }
+
+function matchesQuery(person, q){
+  if(!q) return true;
+  const nameNorm = person.name.replace(/\s/g,'');
+  const qNorm = q.replace(/\s/g,'');
+  if(nameNorm.includes(qNorm)) return true;
+  const qDigits = normDigits(q);
+  if(qDigits.length >= 2 && person.phone && person.phone.includes(qDigits)) return true;
+  return false;
+}
+
+function isCheckedIn(id){ return !!state.checkins[id]; }
+
+function allPeople(){
+  const walkinPeople = state.walkins.map(w => ({
+    id: w.id, name: w.name, region: '', phone: w.phone || '', helpTypes: w.helpTypes || [],
+    reason: w.reason || '', qKim:'', qPyo:'', qJang:'', more:'', isWalkin:true
+  }));
+  return ROSTER.concat(walkinPeople);
+}
+
+function render(){
+  document.getElementById('pgTotal').textContent = ROSTER.length + state.walkins.length;
+  const doneCount = Object.keys(state.checkins).length;
+  document.getElementById('pgDone').textContent = doneCount;
+  const total = ROSTER.length + state.walkins.length;
+  document.getElementById('pgBar').style.width = total ? Math.min(100, Math.round(doneCount/total*100)) + '%' : '0%';
+
+  const main = document.getElementById('main');
+  main.innerHTML = '';
+
+  if(currentTab === 'dash'){
+    renderDash(main);
+    return;
+  }
+
+  let people = allPeople();
+  if(searchQuery){
+    people = people.filter(p => matchesQuery(p, searchQuery));
+  }
+  if(currentTab === 'wait'){ people = people.filter(p => !isCheckedIn(p.id)); }
+  if(currentTab === 'done'){ people = people.filter(p => isCheckedIn(p.id)); }
+
+  if(searchQuery && people.length === 0){
+    const empty = document.createElement('div');
+    empty.className = 'empty-state';
+    empty.innerHTML = '<div class="big">🔍</div><p>"' + escapeHtml(searchQuery) + '" 님은 명단에 없어요</p><p>현장에서 바로 등록해드릴게요</p>' +
+      '<button class="walkin-cta" onclick="openWalkin()">현장 등록하기</button>';
+    main.appendChild(empty);
+    return;
+  }
+
+  if(!searchQuery && people.length === 0){
+    const empty = document.createElement('div');
+    empty.className = 'empty-state';
+    empty.innerHTML = '<div class="big">✅</div><p>해당하는 참가자가 없어요</p>';
+    main.appendChild(empty);
+    return;
+  }
+
+  const list = document.createElement('div');
+  list.className = 'list';
+  people.forEach(p => list.appendChild(renderRow(p)));
+  main.appendChild(list);
+
+  if(searchQuery){
+    const cta = document.createElement('button');
+    cta.className = 'walkin-cta';
+    cta.textContent = '명단에 없는 다른 분 현장 등록하기';
+    cta.onclick = openWalkin;
+    main.appendChild(cta);
+  }
+}
+
+function renderRow(p){
+  const row = document.createElement('div');
+  const checked = isCheckedIn(p.id);
+  row.className = 'row' + (checked ? ' checked' : '');
+  row.onclick = () => openDetail(p.id);
+
+  const badgesHtml = (p.helpTypes||[]).slice(0,3).map(t => '<span class="' + memberBadgeClass(t) + '">' + escapeHtml(t) + '</span>').join('');
+  const walkinBadge = p.isWalkin ? '<span class="badge walkin">현장등록</span>' : '';
+
+  row.innerHTML = `
+    <div class="row-left">
+      <div class="row-name">${escapeHtml(p.name)}</div>
+      <div class="row-meta">${escapeHtml(p.region || (p.isWalkin ? '현장 접수' : ''))}</div>
+      <div class="badges">${walkinBadge}${badgesHtml}</div>
+    </div>
+    <div class="row-status">
+      <div class="check-dot ${checked ? 'done' : ''}">✓</div>
+    </div>
+  `;
+  return row;
+}
+
+function renderDash(main){
+  const total = ROSTER.length + state.walkins.length;
+  const doneCount = Object.keys(state.checkins).length;
+  const waitCount = total - doneCount;
+  const walkinCount = state.walkins.length;
+
+  const wrap = document.createElement('div');
+  wrap.innerHTML = `
+    <div class="dash-grid">
+      <div class="dash-card"><div class="dash-num">${total}</div><div class="dash-label">전체 신청</div></div>
+      <div class="dash-card"><div class="dash-num">${doneCount}</div><div class="dash-label">체크인 완료</div></div>
+      <div class="dash-card"><div class="dash-num">${waitCount}</div><div class="dash-label">미체크인</div></div>
+    </div>
+    <div class="dash-grid" style="grid-template-columns:1fr;">
+      <div class="dash-card" style="text-align:left;">
+        <div style="font-size:13px;color:var(--ink-soft);">현장 등록 인원</div>
+        <div class="dash-num" style="margin-top:4px;">${walkinCount}명</div>
+      </div>
+    </div>
+  `;
+  main.appendChild(wrap);
+
+  const entries = Object.entries(state.checkins)
+    .sort((a,b) => new Date(b[1].at) - new Date(a[1].at))
+    .slice(0, 25);
+  if(entries.length){
+    const listTitle = document.createElement('div');
+    listTitle.style.cssText = 'font-size:13px;font-weight:700;color:var(--ink-soft);margin:18px 4px 8px;';
+    listTitle.textContent = '최근 체크인';
+    main.appendChild(listTitle);
+
+    const people = allPeople();
+    const byId = {}; people.forEach(p => byId[p.id] = p);
+
+    const list = document.createElement('div');
+    list.className = 'list';
+    entries.forEach(([id, info]) => {
+      const p = byId[id];
+      if(!p) return;
+      const row = document.createElement('div');
+      row.className = 'row checked';
+      const time = new Date(info.at);
+      const hh = String(time.getHours()).padStart(2,'0');
+      const mm = String(time.getMinutes()).padStart(2,'0');
+      row.innerHTML = `
+        <div class="row-left">
+          <div class="row-name">${escapeHtml(p.name)}</div>
+          <div class="row-meta">${hh}:${mm} · ${escapeHtml(info.staff || '')}</div>
+        </div>
+        <div class="check-dot done">✓</div>
+      `;
+      main.appendChild(row);
+    });
+  }
+
+  const resetBtn = document.createElement('button');
+  resetBtn.className = 'walkin-cta';
+  resetBtn.style.cssText = 'background:#fff;color:#8C3E28;border:1.5px solid #EFD9D2;margin-top:24px;';
+  resetBtn.textContent = '테스트 데이터 전체 초기화';
+  resetBtn.onclick = () => showConfirm('체크인·현장등록 데이터를 모두 지웁니다. 되돌릴 수 없어요. 정말 초기화할까요?', resetAll);
+  main.appendChild(resetBtn);
+}
+
+function openDetail(id){
+  const p = allPeople().find(x => x.id === id);
+  if(!p) return;
+  const body = document.getElementById('detailBody');
+  const checked = isCheckedIn(id);
+  const info = state.checkins[id];
+
+  let qaHtml = '';
+  const qas = [['김지연 박사님께', p.qKim], ['표태연 코치님께', p.qPyo], ['장서연 코치님께', p.qJang]];
+  qas.forEach(([who, text]) => {
+    if(text && text.trim()){
+      qaHtml += `<div class="qa-block"><div class="qa-who">${who}</div><div class="detail-text">${escapeHtml(text)}</div></div>`;
+    }
+  });
+
+  const badgesHtml = (p.helpTypes||[]).map(t => '<span class="' + memberBadgeClass(t) + '">' + escapeHtml(t) + '</span>').join('');
+
+  body.innerHTML = `
+    <div class="detail-name">${escapeHtml(p.name)}</div>
+    <div class="detail-region">${escapeHtml(p.region || (p.isWalkin ? '현장 등록' : ''))}${p.phone ? ' · ' + escapeHtml(formatPhone(p.phone)) : ''}</div>
+    <div class="badges" style="margin-top:10px;">${badgesHtml}</div>
+
+    ${p.reason ? `<div class="detail-section"><div class="detail-label">참석 희망 이유</div><div class="detail-text">${escapeHtml(p.reason)}</div></div>` : ''}
+    ${qaHtml ? `<div class="detail-section"><div class="detail-label">코치진께 남긴 질문</div>${qaHtml}</div>` : ''}
+    ${p.more ? `<div class="detail-section"><div class="detail-label">더 하고 싶은 말씀</div><div class="detail-text">${escapeHtml(p.more)}</div></div>` : ''}
+
+    ${checked ? `
+      <div class="checked-banner">✓ ${new Date(info.at).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}에 ${escapeHtml(info.staff||'')}님이 체크인 완료</div>
+      <div class="cta-row"><button class="btn btn-undo" onclick="undoCheckin('${id}')">체크인 취소</button></div>
+    ` : `
+      <div class="cta-row"><button class="btn btn-primary" onclick="doCheckin('${id}')">체크인 완료</button></div>
+    `}
+    ${p.isWalkin ? `<div class="cta-row"><button class="btn btn-undo" style="color:#8C3E28;border-color:#EFD9D2;" onclick="showConfirm('이 현장등록을 삭제할까요? 되돌릴 수 없어요.', () => deleteWalkin('${id}'))">이 등록 삭제</button></div>` : ''}
+  `;
+  document.getElementById('detailOverlay').classList.add('show');
+}
+function closeDetail(){ document.getElementById('detailOverlay').classList.remove('show'); }
+
+function formatPhone(digits){
+  if(digits.length === 11) return digits.slice(0,3)+'-'+digits.slice(3,7)+'-'+digits.slice(7);
+  if(digits.length === 10) return digits.slice(0,3)+'-'+digits.slice(3,6)+'-'+digits.slice(6);
+  return digits;
+}
+
+async function doCheckin(id){
+  if(!staffName){ pendingAfterStaff = () => doCheckin(id); openStaffModal(); showToast('먼저 담당자를 선택해주세요'); return; }
+  await upsertCheckin(id, staffName);
+  showToast('체크인 완료됐어요');
+  closeDetail();
+}
+async function undoCheckin(id){
+  await removeCheckin(id);
+  showToast('체크인이 취소됐어요');
+  closeDetail();
+}
+
+function openWalkin(){
+  if(!staffName){ pendingAfterStaff = openWalkin; openStaffModal(); showToast('먼저 담당자를 선택해주세요'); return; }
+  document.getElementById('wiName').value = searchQuery && !normDigits(searchQuery) ? searchQuery : '';
+  document.getElementById('wiPhone').value = '';
+  document.getElementById('wiReason').value = '';
+  wiPicked = new Set();
+  const chipWrap = document.getElementById('wiTypeChips');
+  chipWrap.innerHTML = '';
+  WALKIN_TYPE_OPTIONS.forEach(opt => {
+    const chip = document.createElement('button');
+    chip.className = 'chip-opt';
+    chip.type = 'button';
+    chip.textContent = opt;
+    chip.onclick = () => {
+      if(wiPicked.has(opt)){ wiPicked.delete(opt); chip.classList.remove('picked'); }
+      else { wiPicked.add(opt); chip.classList.add('picked'); }
+    };
+    chipWrap.appendChild(chip);
+  });
+  document.getElementById('walkinOverlay').classList.add('show');
+}
+function closeWalkin(){ document.getElementById('walkinOverlay').classList.remove('show'); }
+
+async function submitWalkin(){
+  const name = document.getElementById('wiName').value.trim();
+  if(!name){ showToast('이름을 입력해주세요'); return; }
+  const phone = normDigits(document.getElementById('wiPhone').value);
+  const reason = document.getElementById('wiReason').value.trim();
+  const id = 'w' + Date.now() + Math.floor(Math.random()*1000);
+
+  const ok = await insertWalkin({ id, name, phone, help_types: Array.from(wiPicked), reason });
+  if(!ok) return;
+  await upsertCheckin(id, staffName);
+  showToast(name + '님 등록 및 체크인 완료');
+  closeWalkin();
+  clearSearch();
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// init
+loadState();
+subscribeRealtime();
+pollTimer = setInterval(loadState, 15000); // 실시간 구독 실패 대비 백업용
+</script>
+</body>
+</html>
