@@ -61,6 +61,17 @@
     font-size:16px; cursor:pointer; flex-shrink:0;
     display:flex; align-items:center; justify-content:center;
   }
+  .mini-reset{
+    background:none; border:none; padding:2px 2px;
+    color:#A9B39E; font-size:10.5px; text-decoration:underline;
+    cursor:pointer; white-space:nowrap;
+  }
+  .header-walkin-btn{
+    width:100%; margin-top:12px;
+    background:var(--clay); color:#fff; border:none;
+    padding:13px; border-radius:12px;
+    font-size:14.5px; font-weight:700; cursor:pointer;
+  }
   .hd-actions{ display:flex; align-items:center; gap:8px; }
   .progress-wrap{ margin-top:14px; }
   .progress-nums{ display:flex; justify-content:space-between; font-size:12px; color:#C7D0C2; margin-bottom:6px; }
@@ -219,7 +230,10 @@
         <div class="hd-title">마음SSUL루션 in 서울</div>
         <div class="hd-sub">10월 4일 · 서울역 · 참가자 체크인</div>
       </div>
-      <button class="staff-chip" id="staffChip" onclick="openStaffModal()">담당자 선택</button>
+      <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+        <button class="staff-chip" id="staffChip" onclick="openStaffModal()">담당자 선택</button>
+        <button class="mini-reset" onclick="showConfirm('체크인·현장등록 데이터를 모두 지웁니다. 되돌릴 수 없어요. 정말 초기화할까요?', resetAll)">⟲ 전체 초기화</button>
+      </div>
     </div>
     <div class="progress-wrap">
       <div class="progress-nums">
@@ -227,7 +241,7 @@
         <span><b id="pgDone">0</b> / <span id="pgTotal">0</span>명</span>
       </div>
       <div class="bar"><div class="bar-fill" id="pgBar" style="width:0%"></div></div>
-      <button class="reset-icon-btn" style="width:auto;height:auto;padding:6px 12px;border-radius:999px;font-size:11px;font-weight:700;margin-top:10px;" onclick="showConfirm('체크인·현장등록 데이터를 모두 지웁니다. 되돌릴 수 없어요. 정말 초기화할까요?', resetAll)">⟲ 전체 초기화</button>
+      <button class="header-walkin-btn" onclick="openWalkin()">+ 현장방문객 등록</button>
     </div>
   </header>
 
